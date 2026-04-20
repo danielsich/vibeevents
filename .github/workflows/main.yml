@@ -1,0 +1,160 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/eventflow-backend
+  IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/eventflow-frontend
+
+# ──────────────────────────────────────────────────────────────────────────────
+# JOB 1 – Lint & Test
+# Runs on every push and PR to main.
+# Ensures code quality before any build or deploy step.
+# ──────────────────────────────────────────────────────────────────────────────
+jobs:
+  lint-and-test:
+    name: 🔍 Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # ── Backend ──────────────────────────────────────────────────────────────
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Run backend tests (Jest)
+        run: npm test
+        working-directory: backend
+        env:
+          NODE_ENV: test
+
+      # ── Frontend ─────────────────────────────────────────────────────────────
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build frontend (verify no compile errors)
+        run: npm run build
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:5000
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # JOB 2 – Build & Push Docker Images
+  # Only runs on direct pushes to main (not PRs).
+  # Builds backend and frontend images and pushes them to GHCR.
+  # ──────────────────────────────────────────────────────────────────────────────
+  build:
+    name: 🐳 Build & Push Images
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    # Only build on pushes to main, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write      # Required to push to GHCR
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # Use the built-in GITHUB_TOKEN – no extra secret needed
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata (backend)
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_BACKEND }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract Docker metadata (frontend)
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_FRONTEND }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest
+
+      - name: Build & push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # JOB 3 – Deploy to Render (Staging)
+  # Fires Render deploy hooks for backend and frontend services.
+  # Requires RENDER_BACKEND_DEPLOY_HOOK_URL and RENDER_FRONTEND_DEPLOY_HOOK_URL
+  # to be set in GitHub Secrets → Settings → Secrets and variables → Actions.
+  # ──────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy to Render
+    runs-on: ubuntu-latest
+    needs: build
+    environment: staging   # Manual approval gate – configure in repo Settings → Environments
+
+    steps:
+      - name: Trigger backend deploy on Render
+        run: |
+          curl -s --fail -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}" \
+            -H "Content-Type: application/json"
+        # If the secret is not set, this step is skipped gracefully
+        if: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL != '' }}
+
+      - name: Trigger frontend deploy on Render
+        run: |
+          curl -s --fail -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL }}" \
+            -H "Content-Type: application/json"
+        if: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL != '' }}
+
+      - name: Deployment summary
+        run: |
+          echo "✅ Deployment triggered for commit ${{ github.sha }}"
+          echo "   Actor:  ${{ github.actor }}"
+          echo "   Branch: ${{ github.ref_name }}"
