@@ -14,11 +14,19 @@ exports.createPaymentIntent = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Amount must be at least 50 cents.' });
     }
 
+    // Strip null/undefined metadata values to prevent Stripe API crashes
+    const safeMetadata = {};
+    for (const key in metadata) {
+      if (metadata[key] !== null && metadata[key] !== undefined) {
+        safeMetadata[key] = String(metadata[key]);
+      }
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount,        // in cents
       currency,
       automatic_payment_methods: { enabled: true },
-      metadata,
+      metadata: safeMetadata,
     });
 
     res.json({ success: true, clientSecret: paymentIntent.client_secret });
