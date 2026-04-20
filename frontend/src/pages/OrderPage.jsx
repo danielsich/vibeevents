@@ -43,19 +43,25 @@ function StripeCheckoutForm({ amount, onSuccess, onError, guestName, cart, event
       const res = await fetch('/api/payments/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          amount, 
-          currency: 'eur', 
-          metadata: { 
-            eventId: eventId || '', 
-            stationId: stationId || '' 
-          } 
+        body: JSON.stringify({
+          amount,
+          currency: 'eur',
+          metadata: {
+            eventId: eventId || '',
+            stationId: stationId || ''
+          }
         }),
       });
-      const data = await res.json();
 
-      if (!data.clientSecret) {
-        setCardError(data.message || 'Payment initialization failed. Please try again.');
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error('Payment service unavailable. Please check your connection and try again.');
+      }
+
+      if (!res.ok || !data.clientSecret) {
+        setCardError(data?.message || 'Payment initialization failed. Please try again.');
         setLoading(false);
         return;
       }
@@ -81,7 +87,18 @@ function StripeCheckoutForm({ amount, onSuccess, onError, guestName, cart, event
           stripePaymentIntentId: paymentIntent.id,
         }),
       });
-      const orderData = await orderRes.json();
+
+      let orderData;
+      try {
+        orderData = await orderRes.json();
+      } catch {
+        throw new Error('Order could not be confirmed. Please contact support.');
+      }
+
+      if (!orderRes.ok) {
+        throw new Error(orderData?.message || 'Order placement failed.');
+      }
+
       onSuccess(orderData.data);
     } catch (err) {
       onError(err.message);
