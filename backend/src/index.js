@@ -36,7 +36,8 @@ async function connectDB() {
 
 // Connect on each request (cached after first call)
 app.use(async (req, res, next) => {
-  // Skip DB connection for routes that don't need it
+  // Skip DB in test mode and for routes that don't need it
+  if (process.env.NODE_ENV === 'test') return next();
   if (req.path === '/api/health') return next();
   try {
     await connectDB();
