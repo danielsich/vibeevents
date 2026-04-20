@@ -6,19 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/eventflow-backend
-  IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/eventflow-frontend
-
-# ──────────────────────────────────────────────────────────────────────────────
-# JOB 1 – Lint & Test
-# Runs on every push and PR to main.
-# Ensures code quality before any build or deploy step.
-# ──────────────────────────────────────────────────────────────────────────────
 jobs:
   lint-and-test:
-    name: 🔍 Lint & Test
+    name: Lint & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +24,6 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
-      # ── Backend ──────────────────────────────────────────────────────────────
       - name: Install backend dependencies
         run: npm ci
         working-directory: backend
@@ -45,7 +34,6 @@ jobs:
         env:
           NODE_ENV: test
 
-      # ── Frontend ─────────────────────────────────────────────────────────────
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
@@ -56,21 +44,20 @@ jobs:
         env:
           VITE_API_URL: http://localhost:5000
 
-  # ──────────────────────────────────────────────────────────────────────────────
-  # JOB 2 – Build & Push Docker Images
-  # Only runs on direct pushes to main (not PRs).
-  # Builds backend and frontend images and pushes them to GHCR.
-  # ──────────────────────────────────────────────────────────────────────────────
   build:
-    name: 🐳 Build & Push Images
+    name: Build & Push Images
     runs-on: ubuntu-latest
     needs: lint-and-test
-    # Only build on pushes to main, not on PRs
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     permissions:
       contents: read
-      packages: write      # Required to push to GHCR
+      packages: write
+
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/eventflow-backend
+      IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/eventflow-frontend
 
     steps:
       - name: Checkout code
@@ -84,7 +71,6 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          # Use the built-in GITHUB_TOKEN – no extra secret needed
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker metadata (backend)
@@ -127,34 +113,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ──────────────────────────────────────────────────────────────────────────────
-  # JOB 3 – Deploy to Render (Staging)
-  # Fires Render deploy hooks for backend and frontend services.
-  # Requires RENDER_BACKEND_DEPLOY_HOOK_URL and RENDER_FRONTEND_DEPLOY_HOOK_URL
-  # to be set in GitHub Secrets → Settings → Secrets and variables → Actions.
-  # ──────────────────────────────────────────────────────────────────────────────
   deploy:
-    name: 🚀 Deploy to Render
+    name: Deploy to Render
     runs-on: ubuntu-latest
     needs: build
-    environment: staging   # Manual approval gate – configure in repo Settings → Environments
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: staging
 
     steps:
       - name: Trigger backend deploy on Render
+        if: secrets.RENDER_BACKEND_DEPLOY_HOOK_URL != ''
         run: |
           curl -s --fail -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}" \
             -H "Content-Type: application/json"
-        # If the secret is not set, this step is skipped gracefully
-        if: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL != '' }}
 
       - name: Trigger frontend deploy on Render
+        if: secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL != ''
         run: |
           curl -s --fail -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL }}" \
             -H "Content-Type: application/json"
-        if: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL != '' }}
 
       - name: Deployment summary
         run: |
-          echo "✅ Deployment triggered for commit ${{ github.sha }}"
-          echo "   Actor:  ${{ github.actor }}"
-          echo "   Branch: ${{ github.ref_name }}"
+          echo "Deployment triggered for commit ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Branch: ${{ github.ref_name }}"
