@@ -66,12 +66,29 @@ npm run install-all   # installs root + backend + frontend
 ```bash
 # Backend
 cp backend/.env.example backend/.env
-# Edit backend/.env – set MONGO_URI and STRIPE_SECRET_KEY
+# Edit backend/.env – set MONGO_URI, STRIPE_SECRET_KEY, and STRIPE_WEBHOOK_SECRET
 
 # Frontend (optional – enables real Stripe payments)
 cp frontend/.env.example frontend/.env
 # Edit frontend/.env – set VITE_STRIPE_PUBLISHABLE_KEY
 ```
+
+**Backend environment variables:**
+
+| Variable | Required | Description |
+|---|---|---|
+| `MONGO_URI` | Yes | MongoDB connection string |
+| `STRIPE_SECRET_KEY` | No | Stripe secret key (`sk_test_*`) – omit for demo mode |
+| `STRIPE_WEBHOOK_SECRET` | No | Stripe webhook signing secret (`whsec_*`) – for production webhooks |
+| `PORT` | No | API port (default: 5000) |
+| `NODE_ENV` | No | `development` or `production` |
+
+**Frontend environment variables:**
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_STRIPE_PUBLISHABLE_KEY` | No | Stripe publishable key (`pk_test_*`) – omit for demo mode |
+| `VITE_API_URL` | No | Backend URL (default: proxied via Vite to `localhost:5000`) |
 
 ### 3. Start MongoDB
 
@@ -121,6 +138,7 @@ If `VITE_STRIPE_PUBLISHABLE_KEY` is not set, the app runs in **Demo Mode** — o
 ```env
 # backend/.env
 STRIPE_SECRET_KEY=sk_test_your_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 
 # frontend/.env
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key
@@ -186,19 +204,44 @@ docker-compose up --build
 # → MongoDB:  localhost:27017
 ```
 
+Services: `mongo` (mongo:7), `backend` (Node 20-alpine), `frontend` (Nginx-served production build).
+
+---
+
+## ☁️ Deployment
+
+### Render
+
+Render deploy hooks are triggered automatically by the CI/CD pipeline after a successful build. Configure the secrets below in your GitHub repository.
+
+### Vercel
+
+Both `backend/vercel.json` and `frontend/vercel.json` are included for serverless deployment to Vercel. The backend uses the `@vercel/node` runtime; the frontend uses the Vite framework preset with SPA rewrites.
+
+```bash
+# Deploy frontend
+cd frontend && vercel
+
+# Deploy backend
+cd backend && vercel
+```
+
 ---
 
 ## 🔑 GitHub Actions – Required Secrets
 
 Go to: **GitHub repo → Settings → Secrets and variables → Actions**
 
-| Secret | Description |
-|---|---|
-| `VITE_API_URL` | Production backend URL |
-| `RENDER_BACKEND_DEPLOY_HOOK_URL` | Render webhook for backend service |
-| `RENDER_FRONTEND_DEPLOY_HOOK_URL` | Render webhook for frontend service |
+| Secret | Required | Description |
+|---|---|---|
+| `VITE_API_URL` | No | Production backend URL (injected at frontend build time) |
+| `STRIPE_SECRET_KEY` | No | Stripe secret key (used during Docker build verification) |
+| `RENDER_BACKEND_DEPLOY_HOOK_URL` | No | Render webhook for backend service |
+| `RENDER_FRONTEND_DEPLOY_HOOK_URL` | No | Render webhook for frontend service |
 
 `GITHUB_TOKEN` is automatic (used to push Docker images to GHCR).
+
+> **Note:** The deploy job requires **manual approval** via a GitHub environment (`staging`). Configure the environment under **Settings → Environments** to add required reviewers.
 
 ---
 
@@ -241,4 +284,3 @@ Go to: **GitHub repo → Settings → Secrets and variables → Actions**
 ## 👥 Contact & Contributing
 
 **Contact:** Daniel Sich / TU München  
-*Created as part of the strategic planning for digital event infrastructure.*
