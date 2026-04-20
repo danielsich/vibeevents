@@ -12,6 +12,13 @@ frontend/.env
 frontend/dist/
 frontend/build/
 
+# Test coverage reports
+coverage/
+backend/coverage/
+
+# Vercel
+.vercel/
+
 # Logs
 *.log
 npm-debug.log*
