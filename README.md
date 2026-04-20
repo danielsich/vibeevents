@@ -1,10 +1,10 @@
-# EventFlow – The Smart Digital Queue 🚀
+# VibeEvents – The Smart Digital Queue 🚀
 
-[![CI/CD Pipeline](https://img.shields.io/github/actions/workflow/status/username/eventflow/main.yml?branch=main&label=CI%2FCD)](https://github.com/username/eventflow/actions)
+[![CI/CD Pipeline](https://img.shields.io/github/actions/workflow/status/username/vibeevents/main.yml?branch=main&label=CI%2FCD)](https://github.com/username/vibeevents/actions)
 [![Stack](https://img.shields.io/badge/Stack-MERN-blue)](https://mongodb.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-EventFlow is a highly scalable web platform that revolutionizes queue management at events (campus festivals, clubs, food trucks). Through **Zero-Risk Pricing** and an intuitive **No-Code interface**, it enables organizers to eliminate wait times and optimize the guest experience via real-time notifications.
+VibeEvents is a highly scalable web platform that revolutionizes queue management at events (campus festivals, clubs, food trucks). Through **Zero-Risk Pricing** and an intuitive **No-Code interface**, it enables organizers to eliminate wait times and optimize the guest experience via real-time notifications.
 
 ---
 
@@ -56,8 +56,8 @@ Every push to the `main` branch triggers the automated pipeline:
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/username/eventflow.git
-cd eventflow
+git clone https://github.com/username/vibeevents.git
+cd vibeevents
 npm run install-all   # installs root + backend + frontend
 ```
 

@@ -1,7 +1,7 @@
 {
-  "name": "eventflow-backend",
+  "name": "vibeevents-backend",
   "version": "1.0.0",
-  "description": "EventFlow Backend – Node.js / Express API",
+  "description": "VibeEvents Backend – Node.js / Express API",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

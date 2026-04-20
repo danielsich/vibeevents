@@ -1,7 +1,7 @@
 {
-  "name": "eventflow",
+  "name": "vibeevents",
   "version": "1.0.0",
-  "description": "EventFlow – The Smart Digital Queue. MERN Stack event management platform.",
+  "description": "VibeEvents – The Smart Digital Queue. MERN Stack event management platform.",
   "private": true,
   "scripts": {
     "install-all": "npm install && npm install --prefix backend && npm install --prefix frontend",

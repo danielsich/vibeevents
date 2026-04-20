@@ -75,7 +75,7 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   connectDB()
     .then(() => {
-      app.listen(PORT, () => console.log(`🚀 EventFlow API on http://localhost:${PORT}`));
+      app.listen(PORT, () => console.log(`🚀 VibeEvents API on http://localhost:${PORT}`));
     })
     .catch(err => {
       console.error('❌ Failed to connect to MongoDB:', err.message);
