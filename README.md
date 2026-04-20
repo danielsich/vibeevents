@@ -1,6 +1,6 @@
 # VibeEvents – The Smart Digital Queue 🚀
 
-[![CI/CD Pipeline](https://img.shields.io/github/actions/workflow/status/username/vibeevents/main.yml?branch=main&label=CI%2FCD)](https://github.com/username/vibeevents/actions)
+[![CI/CD Pipeline](https://img.shields.io/github/actions/workflow/status/danielsich/vibeevents/main.yml?branch=main&label=CI%2FCD)](https://github.com/danielsich/vibeevents/actions)
 [![Stack](https://img.shields.io/badge/Stack-MERN-blue)](https://mongodb.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
