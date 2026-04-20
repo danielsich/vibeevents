@@ -15,7 +15,7 @@ function Layout() {
     <div className="app-shell">
       {!isCustomerPage && (
         <nav className="nav-bar">
-          <span className="nav-logo">⚡ EventFlow</span>
+          <span className="nav-logo">VibeEvents</span>
           <div className="nav-links">
             <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Admin
