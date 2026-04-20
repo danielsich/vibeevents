@@ -56,8 +56,8 @@ jobs:
 
     env:
       REGISTRY: ghcr.io
-      IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/eventflow-backend
-      IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/eventflow-frontend
+      IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/vibeevents-backend
+      IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/vibeevents-frontend
 
     steps:
       - name: Checkout code

@@ -4,21 +4,21 @@ services:
   # ── MongoDB ──────────────────────────────────────────────────────────────────
   mongo:
     image: mongo:7
-    container_name: eventflow-mongo
+    container_name: vibeevents-mongo
     restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
     environment:
-      MONGO_INITDB_DATABASE: eventflow
+      MONGO_INITDB_DATABASE: vibeevents
 
   # ── Backend ──────────────────────────────────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: eventflow-backend
+    container_name: vibeevents-backend
     restart: unless-stopped
     ports:
       - "5000:5000"
@@ -27,7 +27,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 5000
-      MONGO_URI: mongodb://mongo:27017/eventflow
+      MONGO_URI: mongodb://mongo:27017/vibeevents
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
     volumes:
       # Mount source for hot-reload in dev (override CMD to use nodemon)
@@ -38,7 +38,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: eventflow-frontend
+    container_name: vibeevents-frontend
     restart: unless-stopped
     ports:
       - "3000:80"
