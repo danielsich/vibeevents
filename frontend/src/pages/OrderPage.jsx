@@ -43,12 +43,25 @@ function StripeCheckoutForm({ amount, onSuccess, onError, guestName, cart, event
       const res = await fetch('/api/payments/create-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, currency: 'eur', metadata: { eventId, stationId } }),
+        body: JSON.stringify({ 
+          amount, 
+          currency: 'eur', 
+          metadata: { 
+            eventId: eventId || '', 
+            stationId: stationId || '' 
+          } 
+        }),
       });
-      const { clientSecret } = await res.json();
+      const data = await res.json();
+
+      if (!data.clientSecret) {
+        setCardError(data.message || 'Payment initialization failed. Please try again.');
+        setLoading(false);
+        return;
+      }
 
       // 2. Confirm card payment
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+      const { error, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
         payment_method: { card: elements.getElement(CardElement) },
       });
 
@@ -87,6 +100,7 @@ function StripeCheckoutForm({ amount, onSuccess, onError, guestName, cart, event
         marginBottom: '0.75rem',
       }}>
         <CardElement options={{
+          hidePostalCode: true,
           style: {
             base: {
               fontSize: '16px',
