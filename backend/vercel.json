@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "eventflow-backend",
+  "name": "vibeevents-backend",
   "builds": [
     {
       "src": "src/index.js",
