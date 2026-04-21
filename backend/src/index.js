@@ -14,9 +14,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://vibeevents.danielsi.ch',
+    'http://localhost:3000',
+  ],
+}));
 app.use(morgan('dev'));
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
+const { handleWebhook } = require('./controllers/paymentController');
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), handleWebhook);
+
 app.use(express.json());
 
 // Cache the Mongo connection across serverless invocations
